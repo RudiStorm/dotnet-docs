@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>dotnet-docs</AssemblyName>
+    <RootNamespace>DotNetDocs.Cli</RootNamespace>
+    <PackAsTool>true</PackAsTool>
+    <PackageId>dotnet-docs</PackageId>
+    <ToolCommandName>dotnet-docs</ToolCommandName>
+    <PackageTags>dotnet;cli;docs;documentation;tool</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/example/dotnet-docs</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/example/dotnet-docs</RepositoryUrl>
+    <Description>Terminal-first .NET API documentation lookup powered by official Microsoft Learn sources.</Description>
+    <Authors>OpenAI</Authors>
+    <Version>0.1.0</Version>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dotnet-docs.Core\dotnet-docs.Core.csproj" />
+    <ProjectReference Include="..\dotnet-docs.Providers.MicrosoftLearn\dotnet-docs.Providers.MicrosoftLearn.csproj" />
+    <ProjectReference Include="..\dotnet-docs.Rendering\dotnet-docs.Rendering.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Link="README.md" />
+  </ItemGroup>
+</Project>

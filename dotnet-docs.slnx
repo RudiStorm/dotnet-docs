@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/dotnet-docs.Core/dotnet-docs.Core.csproj" />
+  <Project Path="src/dotnet-docs.Providers.MicrosoftLearn/dotnet-docs.Providers.MicrosoftLearn.csproj" />
+  <Project Path="src/dotnet-docs/DotNetDocs.Tool.csproj" />
+  <Project Path="tests/dotnet-docs.Tests/dotnet-docs.Tests.csproj" />
+</Solution>
