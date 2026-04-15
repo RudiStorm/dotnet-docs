@@ -11,8 +11,6 @@
     <ToolCommandName>dotnet-docs</ToolCommandName>
     <PackageTags>dotnet;cli;docs;documentation;tool</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/example/dotnet-docs</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/example/dotnet-docs</RepositoryUrl>
     <Description>Terminal-first .NET API documentation lookup powered by official Microsoft Learn sources.</Description>
     <Authors>OpenAI</Authors>
     <Version>0.1.0</Version>

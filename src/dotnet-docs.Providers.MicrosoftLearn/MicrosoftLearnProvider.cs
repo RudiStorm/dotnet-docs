@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using DotNetDocs.Core;
 
 namespace DotNetDocs.Providers.MicrosoftLearn;
@@ -76,6 +77,10 @@ public sealed class MicrosoftLearnProvider : IDocumentationProvider
             }
 
             return BuildError(query, ResolutionStatus.NetworkError, $"Network error: {ex.Message}");
+        }
+        catch (JsonException ex)
+        {
+            return BuildError(query, ResolutionStatus.Error, $"Microsoft Learn returned an unexpected search response: {ex.Message}");
         }
     }
 
@@ -157,13 +162,17 @@ public sealed class MicrosoftLearnProvider : IDocumentationProvider
         var items = response?.Results ?? [];
 
         var candidates = items
-            .Where(item => !string.IsNullOrWhiteSpace(item.Url) && item.Url.Contains("/dotnet/api/", StringComparison.OrdinalIgnoreCase))
+            .Where(item =>
+            {
+                var bestUrl = GetBestUrl(item);
+                return !string.IsNullOrWhiteSpace(bestUrl) && bestUrl.Contains("/dotnet/api/", StringComparison.OrdinalIgnoreCase);
+            })
             .Select(item => new SearchCandidate(
                 BuildSymbol(item),
                 InferKind(item),
                 InferNamespace(item),
                 item.Description,
-                NormalizeUrl(item.Url!),
+                NormalizeUrl(GetBestUrl(item)!),
                 0,
                 "learn-search"))
             .ToArray();
@@ -174,9 +183,37 @@ public sealed class MicrosoftLearnProvider : IDocumentationProvider
     private static string NormalizeUrl(string url)
         => url.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? url : $"https://learn.microsoft.com{url}";
 
+    private static string? GetBestUrl(LearnSearchItem item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.Url))
+        {
+            return item.Url;
+        }
+
+        if (item.DisplayUrl is JsonElement displayUrl && displayUrl.ValueKind == JsonValueKind.String)
+        {
+            return displayUrl.GetString();
+        }
+
+        if (item.DisplayUrl is JsonElement objectUrl && objectUrl.ValueKind == JsonValueKind.Object)
+        {
+            if (objectUrl.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.String)
+            {
+                return content.GetString();
+            }
+
+            if (objectUrl.TryGetProperty("href", out var href) && href.ValueKind == JsonValueKind.String)
+            {
+                return href.GetString();
+            }
+        }
+
+        return null;
+    }
+
     private static string BuildSymbol(LearnSearchItem item)
     {
-        var title = item.Title?.Trim() ?? item.Url?.Split('/').LastOrDefault() ?? "Unknown";
+        var title = item.Title?.Trim() ?? GetBestUrl(item)?.Split('/').LastOrDefault() ?? "Unknown";
         return title.Replace(" Method", string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace(" Class", string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace(" Struct", string.Empty, StringComparison.OrdinalIgnoreCase)
@@ -211,12 +248,13 @@ public sealed class MicrosoftLearnProvider : IDocumentationProvider
 
     private static string? InferNamespace(LearnSearchItem item)
     {
-        if (item.Url is null)
+        var url = GetBestUrl(item);
+        if (url is null)
         {
             return null;
         }
 
-        var segment = item.Url.Split("/dotnet/api/", StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+        var segment = url.Split("/dotnet/api/", StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
         if (string.IsNullOrWhiteSpace(segment))
         {
             return null;

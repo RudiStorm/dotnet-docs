@@ -16,12 +16,7 @@ public sealed class FileCacheStore : ICacheStore
 
     public FileCacheStore(string? cacheDirectory = null)
     {
-        _cacheDirectory = cacheDirectory ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "dotnet-docs",
-            "cache");
-
-        Directory.CreateDirectory(_cacheDirectory);
+        _cacheDirectory = EnsureCacheDirectory(cacheDirectory);
     }
 
     public async Task<T?> GetAsync<T>(string key, TimeSpan ttl, CancellationToken cancellationToken) where T : class
@@ -66,6 +61,32 @@ public sealed class FileCacheStore : ICacheStore
     }
 
     public string GetCacheDirectory() => _cacheDirectory;
+
+    private static string EnsureCacheDirectory(string? cacheDirectory)
+    {
+        var candidates = new[]
+        {
+            cacheDirectory,
+            Environment.GetEnvironmentVariable("DOTNET_DOCS_CACHE_DIR"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "dotnet-docs", "cache"),
+            Path.Combine(Environment.CurrentDirectory, ".dotnet-docs-cache"),
+            Path.Combine(Path.GetTempPath(), "dotnet-docs", "cache")
+        };
+
+        foreach (var candidate in candidates.Where(path => !string.IsNullOrWhiteSpace(path)))
+        {
+            try
+            {
+                Directory.CreateDirectory(candidate!);
+                return candidate!;
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        throw new InvalidOperationException("Could not create a writable cache directory for dotnet-docs.");
+    }
 
     private async Task<CacheEntry<T>?> ReadEntryAsync<T>(string key, CancellationToken cancellationToken) where T : class
     {
